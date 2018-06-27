@@ -49,33 +49,46 @@ int validate(int data_type,int identifier){
 		return 0;
 }
 int parse(struct info_about_tokens *ptr,int token_cnt){
-/*	for(int i=0;i<token_cnt;i++){
-		printf("\nook %d %c",ptr->d_type,ptr->value);
-		
-		ptr++;
-	}
-*/
+	int i=0;
 	int isvalid;
+	
 	isvalid=validate(ptr->d_type,DIGIT);
 	if(isvalid){
+		token_cnt--;
 		ptr++;
-		isvalid=(validate(ptr->d_type,PLUS)||validate(ptr->d_type,MINUS)||validate(ptr->d_type,MULTIPLY)||validate(ptr->d_type,DIVIDE));
-			if(isvalid){
+		/*this checks for the initial condition (ex.INPUT = 2)
+		*/
+		if(token_cnt==0)
+			return 0;
+		
+		while(token_cnt!=0){
+	//if operator matches
+	if((validate(ptr->d_type,PLUS)||validate(ptr->d_type,MINUS)||validate(ptr->d_type,MULTIPLY)||validate(ptr->d_type,DIVIDE)))
+			{
+
 				ptr++;
-					isvalid=validate(ptr->d_type,DIGIT);
-						if(isvalid)
-							return 1;							
-						else
-							return 0;
-			
+				token_cnt--;
+				if(validate(ptr->d_type,DIGIT)){//now the 2nd para matches
+					ptr++;
+					token_cnt--;
+				}
+				else
+					return 0;	
 			}
 			else{
 				return 0;
 			}
+
+		
+		}
+		return 1;
+	
 	}
 	else{
-				return 0;
+		return 0;
 	}
+
+
 }
 int main(void){
 	
@@ -112,7 +125,7 @@ int main(void){
 	}
 	
 	int success=parse(exp_info,token_cnt);	
-	if(success)	
+	if(success)
 		printf("\nFORMAT MATCHES");
 	else
 		printf("\nFORMAT DOSEN'T MATCHES");
