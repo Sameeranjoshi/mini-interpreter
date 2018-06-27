@@ -10,7 +10,7 @@
 #define DIVIDE 6
 struct info_about_tokens{
 	int d_type;
-	char value;
+	char value;		//beaware it's in char when value needed parse it!
 };
 void gettoken(char *position,struct info_about_tokens *ptr_to_str){
 	
@@ -41,6 +41,41 @@ void gettoken(char *position,struct info_about_tokens *ptr_to_str){
 				ptr_to_str->value='N';		//INSERT AS NULL VALUE
 	}
 
+}
+int validate(int data_type,int identifier){
+	if(data_type==identifier)
+		return 1;
+	else
+		return 0;
+}
+int parse(struct info_about_tokens *ptr,int token_cnt){
+/*	for(int i=0;i<token_cnt;i++){
+		printf("\nook %d %c",ptr->d_type,ptr->value);
+		
+		ptr++;
+	}
+*/
+	int isvalid;
+	isvalid=validate(ptr->d_type,DIGIT);
+	if(isvalid){
+		ptr++;
+		isvalid=(validate(ptr->d_type,PLUS)||validate(ptr->d_type,MINUS)||validate(ptr->d_type,MULTIPLY)||validate(ptr->d_type,DIVIDE));
+			if(isvalid){
+				ptr++;
+					isvalid=validate(ptr->d_type,DIGIT);
+						if(isvalid)
+							return 1;							
+						else
+							return 0;
+			
+			}
+			else{
+				return 0;
+			}
+	}
+	else{
+				return 0;
+	}
 }
 int main(void){
 	
@@ -75,5 +110,11 @@ int main(void){
 	for(int i=0;i<token_cnt;i++){
 		printf("\n (%d,%c)",exp_info[i].d_type,exp_info[i].value);
 	}
-		
+	
+	int success=parse(exp_info,token_cnt);	
+	if(success)	
+		printf("\nFORMAT MATCHES");
+	else
+		printf("\nFORMAT DOSEN'T MATCHES");
+	
 }
