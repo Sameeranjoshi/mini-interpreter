@@ -9,9 +9,10 @@
 #define MINUS 4
 #define MULTIPLY 5
 #define DIVIDE 6
+
 struct info_about_tokens{
 	int d_type;
-	char value;		//beaware it's in char when value needed parse it!
+	char value;		//beaware it's in char when value needed for evaluation parse it!
 };
 
 struct info_about_tokens stack[10];
@@ -96,14 +97,12 @@ int operator(int data_type){
 }
 int factor(int data_type){
 	//factor:INTEGER|ALPHABET|VARIABLE
-	printf("\tfactor called");
 	if(data_type==DIGIT)
 		return 1;
 	else 
 		return 0;
 }
 int term(struct info_about_tokens *ptr,int token_cnt,int globalindex){
-	printf("\tterm called");
 	/*
 		term:factor (((mul)|(div))factor)*
 	*/	
@@ -116,17 +115,12 @@ int term(struct info_about_tokens *ptr,int token_cnt,int globalindex){
 		token_cnt--;
 		ptr++;
 		globalindex++;			//goes to next ele
-		/*this checks for the initial condition (ex.INPUT = 2)(this saves you!!)
-		*/
-//		if(token_cnt==0)
-//			return 0;
 		
 		while(token_cnt!=0){
 			//if operator matches
 			
 			if((ptr->d_type==MULTIPLY)||(ptr->d_type==DIVIDE))
 			{
-				printf("\tOPERATOR MATCH FOUND");
 				ptr++;
 				token_cnt--;
 				if(factor(ptr->d_type)){//now the 2nd para matches
@@ -158,36 +152,25 @@ int term(struct info_about_tokens *ptr,int token_cnt,int globalindex){
 
 }
 int expr(struct info_about_tokens *ptr,int token_cnt){//remaining to complete
-	printf("\texpr called");
-
-	struct info_about_tokens *start_address=ptr;
-	int isvalid,globalindex=0;
-	globalindex=term(ptr,token_cnt,globalindex);
-	printf("\nINSIDE EXPR GLOBALINDEX IS :%d\nprinting array",globalindex);
-	for(int i=0;i<token_cnt;i++)
-		printf("\n%d",ptr[globalindex].value);
-
-//	printf("\nprt is %d index is %d",ptr,globalindex);
-	ptr=start_address+globalindex;		//take ptr ahead
-
-//	printf("\nprt is %d index is %d",ptr,globalindex);
-
-	printf("\n%d %c ",ptr->d_type,ptr->value);
+	/*
+		expr:term (((SUB)|(ADD))term)*
+	*/
 	
-	int save;
+	struct info_about_tokens *start_address=ptr;
+	int globalindex=0;
+	globalindex=term(ptr,token_cnt,globalindex);
+
+	ptr=start_address+globalindex;		//take ptr ahead
+	
 	if(globalindex!=-1){
-//				printf("\ndatatype%c %d globalindex %d",ptr[globalindex-1].value,ptr->d_type,globalindex);
 		while(globalindex<token_cnt){
 			if((ptr->d_type==PLUS)||(ptr->d_type==MINUS)){
 				globalindex++;
-				printf("\nsameeran %d",globalindex);
 			    if(globalindex<token_cnt){
 					if(factor(start_address[globalindex].d_type)){
-						printf("trapped");
 						globalindex++;
 					}
 					else{	
-						printf("\nin else %d",globalindex);
 						return 0;	
 					}
 			    }		
@@ -235,7 +218,6 @@ int check_precedence(int operator_val){
 }
 
 
-
 struct info_about_tokens* postfix(struct info_about_tokens *postfix_ptr,int token_cnt){
 	struct info_about_tokens *temp_ptr;
 	
@@ -249,8 +231,7 @@ struct info_about_tokens* postfix(struct info_about_tokens *postfix_ptr,int toke
 			new_postfixed[new_index].value=postfix_ptr->value;
 			new_index++;
 		}
-		else if(isoperator(postfix_ptr->d_type)){
-			printf("\nisoperator");
+		else if(isoperator(postfix_ptr->d_type)){		
 			int ok_to_push=check_precedence(postfix_ptr->value);//ret 1 if greater precedence
 			if(ok_to_push){
 				push(postfix_ptr);
@@ -263,7 +244,7 @@ struct info_about_tokens* postfix(struct info_about_tokens *postfix_ptr,int toke
 					new_index++;
 				}
 		*/	
-			printf("\tout of scope");
+
 			}
 		}
 		postfix_ptr++;	
@@ -282,7 +263,7 @@ struct info_about_tokens* postfix(struct info_about_tokens *postfix_ptr,int toke
 struct node* AST(struct info_about_tokens *ptr_struct,int token_cnt){
 
 	ptr_struct=postfix(ptr_struct,token_cnt);
-	printf("\v\v\t\tPOSTFIX EXPRESSION IS:");
+	printf("\nPOSTFIX EXPRESSION IS:");
 	print_postfix(ptr_struct,token_cnt);
 
 	struct info_about_tokens *loopptr=ptr_struct;
@@ -303,17 +284,14 @@ struct node* AST(struct info_about_tokens *ptr_struct,int token_cnt){
 			push_AST(ptr_to_node);//pass the pointer POINTING TO '+' 
 			
 		}
-		else{
-			printf("\n\n\nfoo");
+		else{			
 			struct node *ptr_to_node;
 			ptr_to_node=malloc(sizeof(struct node));
 		
 			ptr_to_node->d_type=loopptr->d_type;
 			ptr_to_node->value=loopptr->value;//note=the values are in character,while eval. convert to integer
 			ptr_to_node->left=NULL;
-			ptr_to_node->right=NULL;
-		
-//			ptr_to_node=&new_node;	//points the pointer to newly created node
+			ptr_to_node->right=NULL;		
 			push_AST(ptr_to_node);//pass the pointer to push
 		}
 	loopptr++;
@@ -331,7 +309,7 @@ void inorder(struct node *alias_root){
 	
 	inorder(alias_root->left);
 
-	printf("\n%c",alias_root->value);
+	printf("  %c",alias_root->value);
 	
 	inorder(alias_root->right);
 
@@ -354,7 +332,6 @@ int main(void){
 	while((*position)!='\0'){
 		if(isspace(*position)){
 			position++;
-			printf("\nskipped a space");
 		}
 		else{
 			gettoken(position,&exp_info[i]);
@@ -365,16 +342,19 @@ int main(void){
 
 	}
 
-	printf("\nTHE EXPRESSION STRUCTURE IS(after lexing):");
-	printf("\n(DATATYPE,VALUE)\n1=DIGIT\n3=PLUS\n4=MINUS\n5=MULTIPLY\n6=DIVIDE");
+	printf("\n\v\t\t######	TOKENIZATION DONE	######");
+	printf("\nLIST OF TOKENS[0=NONE|1=DIGIT|3=PLUS|4=MINUS|5=MULTIPLY|6=DIVIDE]");
 	for(int i=0;i<token_cnt;i++){
 		printf("\n (%d,%c)",exp_info[i].d_type,exp_info[i].value);
 	}
 	
 	int success=expr(exp_info,token_cnt);
+	printf("\n\v\t\t######	PARSING DONE	######");
 	if(success){
 		printf("\nFORMAT MATCHES");
-		root=AST(exp_info,token_cnt);			
+		printf("\n\v\t\t######	CREATING AST	######");
+		root=AST(exp_info,token_cnt);
+		printf("\nAST CREATED\nprinting the indorder of AST");
 		inorder(root);
 				
 	}
