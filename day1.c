@@ -10,6 +10,7 @@
 #define MULTIPLY 5
 #define DIVIDE 6
 
+
 struct info_about_tokens{
 	int d_type;
 	char value;		//beaware it's in char when value needed for evaluation parse it!
@@ -51,7 +52,7 @@ struct node* pop_AST(){
 		AST_top--;
 	return p;
 }
-struct info_about_tokens new_postfixed[10];//conntains the postfixed array
+struct info_about_tokens new_postfixed[20];//conntains the postfixed array
 void gettoken(char *position,struct info_about_tokens *ptr_to_str){
 	
 	if(isdigit(*position)){
@@ -213,8 +214,34 @@ int isoperator(int data_type){
 	else
 		return 0;
 }
-int check_precedence(int operator_val){
-	return 1;	//heres a bug need to fix
+int check_precedence(char operator_val){
+	int prec_on_list,prec_on_stack;
+	if(operator_val=='+'||operator_val=='-')
+		prec_on_list=1;
+	else if(operator_val=='*'||operator_val=='/')
+		prec_on_list=2;
+	
+	if(top!=-1){
+		switch(stack[top].value){
+		case '+':
+		case '-':
+			prec_on_stack=1;
+			break;
+		case '*':
+		case '/':
+			prec_on_stack=2;
+			break;
+		}
+	}
+	else
+		prec_on_stack=-1;
+
+
+//		printf("OPERATOR VAL: %d %c",operator_val,operator_val);
+	if(prec_on_list>prec_on_stack)
+		return 1;	//heres a bug need to fix
+	else
+		return 0;
 }
 
 
@@ -232,22 +259,22 @@ struct info_about_tokens* postfix(struct info_about_tokens *postfix_ptr,int toke
 			new_index++;
 		}
 		else if(isoperator(postfix_ptr->d_type)){		
-			int ok_to_push=check_precedence(postfix_ptr->value);//ret 1 if greater precedence
+			int ok_to_push=check_precedence(postfix_ptr->value);//ret 1 if striclty greater precedence.
 			if(ok_to_push){
 				push(postfix_ptr);
 			}
 			else{
-		/*		while((ok_to_push=check_precedence(postfix_ptr->value))!=1){
-					struct info_about_token *hold=pop();
+				while((ok_to_push=check_precedence(postfix_ptr->value))!=1){
+					struct info_about_tokens *hold=pop();
 					new_postfixed[new_index].d_type=hold->d_type;
 					new_postfixed[new_index].value=hold->value;
 					new_index++;
 				}
-		*/	
+				push(postfix_ptr);
 
 			}
 		}
-		postfix_ptr++;	
+		postfix_ptr++;
 	}
 	while(top>=0){//why >= as need also the value of 0 location of stack
 		struct info_about_tokens *hold=pop();
