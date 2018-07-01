@@ -1,3 +1,9 @@
+/*
+-	only 0-9 allowed
+-	no variables allowed
+-	if somewhere x/0 is present floating point exception not handled yet :>
+		
+*/
 #include<stdio.h>
 #include<ctype.h>
 #include<string.h>
@@ -43,6 +49,9 @@ struct node{
 struct node *pointer_stack[30];
 int AST_top=-1;
 
+
+
+int term(struct info_about_tokens *ptr,int token_cnt,int globalindex);
 void push_AST(struct node *holding_ptr){
 	AST_top++;
 	pointer_stack[AST_top]=holding_ptr;
@@ -110,90 +119,77 @@ int factor(int data_type,int globalindex){
 	else
 		return -1;
 }
+
+int expr(struct info_about_tokens *ptr,int token_cnt,int globalindex){
+	/*
+		expr:term ((+|-|*|/)term)*
+	*/
+	globalindex=term(ptr,token_cnt,globalindex);
+	if(globalindex!=-1){
+		globalindex++;
+			while(1){				
+				if(globalindex>=token_cnt){		//does string end here if yes return SUCCESS
+
+					return globalindex;		
+				}
+
+				else if((ptr[globalindex].d_type==PLUS)||(ptr[globalindex].d_type==MINUS)||(ptr[globalindex].d_type==MULTIPLY)||(ptr[globalindex].d_type==DIVIDE))
+				{
+					globalindex++;
+					if(globalindex>=token_cnt){//AS STRING ENDS AFTER 2+,SO FAIL
+						return (-1);				
+					}
+					else{//if some term is present after +/*/ check it
+						globalindex=term(ptr,token_cnt,globalindex);
+						if(globalindex!=-1){//now the 2nd para matches
+							globalindex++;
+						}
+						else
+							return (-1);	//-1 for no match
+					}
+				}
+				else if(ptr[globalindex].d_type==RPAREN){
+					globalindex--;
+					return globalindex;
+				}
+				else
+					return (-1);//other than +-/* and string dosen't end here so FAIL
+			}
+	}
+	else{
+		return (-1);
+	}
+
+}
 int term(struct info_about_tokens *ptr,int token_cnt,int globalindex){
 	/*
-		term:factor (((mul)|(div))factor)*
+		term:DIGIT|LPAREN expr RPAREN|
 	*/	
 	if(globalindex>token_cnt)	
 		return -1;
-	
-	globalindex=factor(ptr[globalindex].d_type,globalindex);	
-	
-	if(globalindex!=-1){				
-		globalindex++;
-		
-			while(1){			
-				if(globalindex>=token_cnt){
-	
-					return globalindex;		
-				}
-		
-				else if((ptr[globalindex].d_type==MULTIPLY)||(ptr[globalindex].d_type==DIVIDE))
-				{
-					globalindex++;
-				
-					if(factor(ptr[globalindex].d_type,globalindex)!=-1){//now the 2nd para matches
-						globalindex++;
-					}
-					else
-						return (-1);	//-1 for no match
-				}
-				else if((ptr[globalindex].d_type==PLUS)||(ptr[globalindex].d_type==MINUS)){
-					return globalindex;//ex like = 2+
-				}
-				
-				else
-					return (-1);//fail				
+	if(ptr[globalindex].d_type==DIGIT)
+		return globalindex;
+	else if(ptr[globalindex].d_type==LPAREN){
+			globalindex++;
+			globalindex=expr(ptr,token_cnt,globalindex);
+			if(globalindex==(-1)){
+				return (-1);
 			}
+			else{
+				globalindex++;
+				if(ptr[globalindex].d_type==RPAREN){
+					return globalindex;			
+				}
+				else{
+					return (-1);//no closing brackets				
+				}
+			}
+//			printf("\nshould print '5' or ascii %c now gi is %d",ptr[globalindex].value,globalindex);
+
 	}
 	else{
-		return (-1);
-	}
-
-
-}
-int expr(struct info_about_tokens *ptr,int token_cnt){//remaining to complete
-	/*
-		expr:term (((SUB)|(ADD))term)*
-	*/
-	int globalindex=0;
-	globalindex=term(ptr,token_cnt,globalindex);	
-	if(globalindex!=-1){				
-//		globalindex++;
-			while(1){			
-				
-				if(globalindex>=token_cnt){				////////////////////==========here
-
-					return globalindex;		
-				}
-
-				else if((ptr[globalindex].d_type==PLUS)||(ptr[globalindex].d_type==MINUS))
-				{
-					globalindex++;
-
-
-					globalindex=term(ptr,token_cnt,globalindex);
-		
-	
-					if(globalindex!=-1){//now the 2nd para matches
-						//globalindex++;
-					}
-					else
-						return (-1);	//-1 for no match
-				}
-				else if((ptr[globalindex].d_type==MULTIPLY)||(ptr[globalindex].d_type==DIVIDE)){
-					printf("\nBUG IN PROG- IF FOLLING CONDITION IS EXECUTED");
-					return globalindex;//ex like = 2+
-				}
-				
-				else
-					return (-1);//fail				
-			}
-	}
-	else{
-		return (-1);
-	}
-
+		return (-1);	
+	}	
 }
 void print_info_struct(struct info_about_tokens *loopptr,int token_cnt){
 	for(int i=0;i<token_cnt;i++){
@@ -306,7 +302,7 @@ struct info_about_tokens* postfix(struct info_about_tokens *postfix_ptr,int toke
 						new_postfixed[new_index].value=hold->value;
 						new_index++;
 					}
-					struct info_about_tokens *del=pop();
+					struct info_about_tokens *del=pop();//purposefully kept unused need to pop the last element
 					break;
 			}
 		}
@@ -389,21 +385,20 @@ void inorder(struct node *alias_root,int space){
 int eval(struct node *alias_root){
 	if(!alias_root)
 		return 0;
-	else if((!alias_root->left)&&(!alias_root->right)){
-		//printf("\n\t%d",alias_root->value-'0');
-		return alias_root->value-'0';
+	else if((!alias_root->left)&&(!alias_root->right)){		
+		return (alias_root->value-'0');
 	}
 	int l_value=eval(alias_root->left);
 	int r_value=eval(alias_root->right);
 	
 	if(alias_root->value=='+')
-		return l_value+r_value;
+		return (l_value+r_value);
 	if(alias_root->value=='-')
-		return l_value-r_value;
+		return (l_value-r_value);
 	if(alias_root->value=='*')
-		return l_value*r_value;
+		return (l_value*r_value);
 	if(alias_root->value=='/')
-		return l_value/r_value;	
+		return (l_value/r_value) ;	
 }
 int main(void){
 	
@@ -414,23 +409,23 @@ int main(void){
 	scanf("%[^\n]s",input_expression);	//accepts spaces now
 
 	printf("\nTHE EXPRESSION IS: %s",input_expression);		
-
+	
 	
 	char *position;
 	position=input_expression;
 	int token_cnt=0;
 	int i=0,cnt_except_paren=0;		
-	
-	
 
-int no_of_paren=0;
+	int no_of_paren=0;
 	while((*position)!='\0'){
-//		printf("\nvalue %d %d",*position,'(');
+
 		if((*position=='(')||(*position==')'))
 			no_of_paren++;
+
 		if(isspace(*position)){
 			position++;
 		}
+
 		else{
 			gettoken(position,&exp_info[i]);
 			token_cnt++;
@@ -446,8 +441,10 @@ int no_of_paren=0;
 	}
 	
 	cnt_except_paren=token_cnt-no_of_paren;
-	int success=expr(exp_info,token_cnt);
-	printf("\n\v\t\t######	PARSING DONE	###### ");
+	
+	int globalindex=0;
+	int success=expr(exp_info,token_cnt,globalindex);
+	printf("\n\v\t\t######	PARSING DONE	###### %d",success);
 	if(success!=(-1)){
 		printf("\nFORMAT MATCHES");
 		printf("\n\v\t\t######	CREATING AST	######");
