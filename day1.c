@@ -103,55 +103,48 @@ int operator(int data_type){
 	else
 		return 0;
 }
-int factor(int data_type){
+int factor(int data_type,int globalindex){
 	//factor:INTEGER|ALPHABET|VARIABLE
 	if(data_type==DIGIT)
-		return 1;
-	else 
-		return 0;
+		return globalindex;	
+	else
+		return -1;
 }
 int term(struct info_about_tokens *ptr,int token_cnt,int globalindex){
 	/*
 		term:factor (((mul)|(div))factor)*
 	*/	
-
-	int isvalid;
+	if(globalindex>token_cnt)	
+		return -1;
 	
-	isvalid=factor(ptr->d_type);
-	if(isvalid){
+	globalindex=factor(ptr[globalindex].d_type,globalindex);	
+	
+	if(globalindex!=-1){				
+		globalindex++;
 		
-		token_cnt--;
-		ptr++;
-		globalindex++;			//goes to next ele
-		
-		while(token_cnt!=0){
-			//if operator matches
-			
-			if((ptr->d_type==MULTIPLY)||(ptr->d_type==DIVIDE))
-			{
-				ptr++;
-				token_cnt--;
-				if(factor(ptr->d_type)){//now the 2nd para matches
-					ptr++;
-					token_cnt--;
-
-			//why 2 times?as we check DIGIT OPERATOR then only increase the count else invalid
-					globalindex++;
-					globalindex++;
+			while(1){			
+				if(globalindex>=token_cnt){
+	
+					return globalindex;		
 				}
-				else
-					return (-1);	//-1 for no match
-			}
-			else if((ptr->d_type==PLUS)||(ptr->d_type==MINUS)){
-				return globalindex;//ex like = 2+
-			}
-			else{
-				return (-1);		//ex. like = 2 3
-			}
 		
-		}
-	return globalindex;
-	
+				else if((ptr[globalindex].d_type==MULTIPLY)||(ptr[globalindex].d_type==DIVIDE))
+				{
+					globalindex++;
+				
+					if(factor(ptr[globalindex].d_type,globalindex)!=-1){//now the 2nd para matches
+						globalindex++;
+					}
+					else
+						return (-1);	//-1 for no match
+				}
+				else if((ptr[globalindex].d_type==PLUS)||(ptr[globalindex].d_type==MINUS)){
+					return globalindex;//ex like = 2+
+				}
+				
+				else
+					return (-1);//fail				
+			}
 	}
 	else{
 		return (-1);
@@ -163,38 +156,44 @@ int expr(struct info_about_tokens *ptr,int token_cnt){//remaining to complete
 	/*
 		expr:term (((SUB)|(ADD))term)*
 	*/
-	
-	struct info_about_tokens *start_address=ptr;
 	int globalindex=0;
-	globalindex=term(ptr,token_cnt,globalindex);
+	globalindex=term(ptr,token_cnt,globalindex);	
+	if(globalindex!=-1){				
+//		globalindex++;
+			while(1){			
+				
+				if(globalindex>=token_cnt){				////////////////////==========here
 
-	ptr=start_address+globalindex;		//take ptr ahead
+					return globalindex;		
+				}
+
+				else if((ptr[globalindex].d_type==PLUS)||(ptr[globalindex].d_type==MINUS))
+				{
+					globalindex++;
+
+
+					globalindex=term(ptr,token_cnt,globalindex);
+		
 	
-	if(globalindex!=-1){
-		while(globalindex<token_cnt){
-			if((ptr->d_type==PLUS)||(ptr->d_type==MINUS)){
-				globalindex++;
-			    if(globalindex<token_cnt){
-					if(factor(start_address[globalindex].d_type)){
-						globalindex++;
+					if(globalindex!=-1){//now the 2nd para matches
+						//globalindex++;
 					}
-					else{	
-						return 0;	
-					}
-			    }		
-			    else{
-				return 0;//if like e.x=2+ and string ends after +
-			    }			
+					else
+						return (-1);	//-1 for no match
+				}
+				else if((ptr[globalindex].d_type==MULTIPLY)||(ptr[globalindex].d_type==DIVIDE)){
+					printf("\nBUG IN PROG- IF FOLLING CONDITION IS EXECUTED");
+					return globalindex;//ex like = 2+
+				}
+				
+				else
+					return (-1);//fail				
 			}
-			else{
-				return 1;//the term(...)* the expression in () isnottrue	
-			}
-		}
-		return 1;//this says the term has already checked all(ex. 2*3*5)
 	}
 	else{
-		return 0;//term says the expression is wrong
+		return (-1);
 	}
+
 }
 void print_info_struct(struct info_about_tokens *loopptr,int token_cnt){
 	for(int i=0;i<token_cnt;i++){
@@ -363,12 +362,9 @@ printf("\vnumber %d",cnt_except_paren);
 		}
 	loopptr++;
 	}
-//	printf("\nTOP STACK %c",pointer_stack[AST_top]->value);
-	
 	
 	struct node *ROOT;
 	ROOT=pop_AST();
-//	printf("\nINGLE%c",ROOT->value);
 	return ROOT;
 }
 
@@ -394,7 +390,7 @@ int eval(struct node *alias_root){
 	if(!alias_root)
 		return 0;
 	else if((!alias_root->left)&&(!alias_root->right)){
-		printf("\n\t%d",alias_root->value-'0');
+		//printf("\n\t%d",alias_root->value-'0');
 		return alias_root->value-'0';
 	}
 	int l_value=eval(alias_root->left);
@@ -450,10 +446,9 @@ int no_of_paren=0;
 	}
 	
 	cnt_except_paren=token_cnt-no_of_paren;
-//	printf("\nexcept paren %d",cnt_except_paren);
 	int success=expr(exp_info,token_cnt);
-	printf("\n\v\t\t######	PARSING DONE	######");
-	if(!success){
+	printf("\n\v\t\t######	PARSING DONE	###### ");
+	if(success!=(-1)){
 		printf("\nFORMAT MATCHES");
 		printf("\n\v\t\t######	CREATING AST	######");
 		root=AST(exp_info,token_cnt,cnt_except_paren);
@@ -462,7 +457,7 @@ int no_of_paren=0;
 		inorder(root,0);
 		printf("-------------------------------------------");
 		int ans=eval(root);
-		printf("\v\v %d",ans);
+		printf("\n^^^^^^ANSWER IS %d",ans);
 	}
 	else
 		printf("\nFORMAT DOSEN'T MATCHES");
