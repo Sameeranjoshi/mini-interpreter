@@ -64,27 +64,6 @@ void gettoken(char *position,struct info_about_tokens *ptr_to_str){
 	}
 
 }
-int validate(int data_type,int identifier){
-	if(data_type==identifier)
-		return 1;
-	else
-		return 0;
-}
-int operator(int data_type){
-	//operator:PLUS|MINUS|MULTIPLY|DIVIDE
-	if((data_type==PLUS)||(data_type==MINUS)||(data_type==MULTIPLY)||(data_type==DIVIDE))
-		return 1;
-	else
-		return 0;
-}
-int factor(int data_type,int globalindex){
-	//factor:INTEGER|ALPHABET|VARIABLE
-	if(data_type==DIGIT)
-		return globalindex;	
-	else
-		return -1;
-}
-
 int expr(struct info_about_tokens *ptr,int token_cnt,int globalindex){
 	/*
 		expr:term ((+|-|*|/)term)*
